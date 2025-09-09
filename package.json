@@ -4,6 +4,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc --watch",
     "start": "node dist/server.js"
   },
   "keywords": [],

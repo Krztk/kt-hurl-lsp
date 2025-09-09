@@ -1,11 +1,24 @@
 import { initialize } from "./handlers/initialize";
+import { completion } from "./handlers/text-document/completion";
+import { didChange } from "./handlers/text-document/did-change";
 import { log } from "./log";
-import { RequestMessage } from "./types";
+import { Message, RequestMessage } from "./types";
 
-type RequestHandler = (message: RequestMessage) => object;
+export interface NotificationMessage extends Message {
+  method: string;
+  params?: unknown[] | object;
+}
 
-const handlers: Record<string, RequestHandler> = {
+type NotificationMessageHandler = (message: NotificationMessage) => void;
+
+type MessageHandler = (
+  message: RequestMessage,
+) => ReturnType<typeof initialize> | ReturnType<typeof completion>;
+
+const handlers: Record<string, MessageHandler | NotificationMessageHandler> = {
   initialize,
+  "textDocument/completion": completion,
+  "textDocument/didChange": didChange,
 };
 
 const respond = (id: RequestMessage["id"], result: unknown) => {
@@ -31,14 +44,20 @@ process.stdin.on("data", (chunk) => {
     if (buffer.length < messageStart + contentLength) break;
 
     const rawMessage = buffer.slice(messageStart, messageStart + contentLength);
-    const message = JSON.parse(rawMessage);
+    const message = JSON.parse(rawMessage) as RequestMessage;
 
-    log.write({ id: message.id, method: message.method });
+    log.write({
+      id: message.id,
+      method: message.method,
+    });
 
     const handler = handlers[message.method];
 
     if (handler) {
-      respond(message.id, handler(message));
+      const response = handler(message);
+      if (response != undefined) {
+        respond(message.id, response);
+      }
     }
 
     buffer = buffer.slice(messageStart + contentLength);

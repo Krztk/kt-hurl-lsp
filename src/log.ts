@@ -20,4 +20,8 @@ export const log = {
     }
     logStream.write("\n");
   },
+  writeIndented: (message: object) => {
+    logStream.write(JSON.stringify(message, null, 2));
+    logStream.write("\n");
+  },
 };
