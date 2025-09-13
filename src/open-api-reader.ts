@@ -27,7 +27,7 @@ export async function processApiDocument(
   return api;
 }
 
-type Method = "get" | "post" | "put" | "delete" | "patch";
+export type Method = "get" | "post" | "put" | "delete" | "patch";
 interface Endpoint {
   method: Method;
   route: string;
@@ -38,9 +38,12 @@ type GroupedEndpoints = Record<Method, Endpoint[]>;
 
 const groupedEndpoints = new Map<string, GroupedEndpoints>();
 
-export const getEndpoints = (uri: string) => groupedEndpoints.get(uri);
+export const getEndpointsForUri = (uri: string) => groupedEndpoints.get(uri);
+export const getEndpoints = (): GroupedEndpoints[] => {
+  return Array.from(groupedEndpoints.values());
+};
 
-const supportedMethods = [
+export const supportedMethods = [
   "get",
   "post",
   "put",

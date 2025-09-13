@@ -1,5 +1,6 @@
 import { documents } from "../../documents";
 import { log } from "../../log";
+import { getEndpoints, Method, supportedMethods } from "../../open-api-reader";
 import { CompletionParams, Range, RequestMessage } from "../../types";
 
 type InsertTextFormat = 1 | 2; //plain // snippet
@@ -54,6 +55,7 @@ export const completion = (message: RequestMessage): CompletionList | null => {
 
   const currentLine = content.split("\n")[params.position.line]!;
   const lineUntilCursor = currentLine.slice(0, params.position.character);
+
   const m = lineUntilCursor.match(/([:\[])?(\s*)(\w+)$/);
   const delimiter = m?.[1] ?? ""; // ":" or "[" if present
   const whitespace = m?.[2] ?? ""; // any spaces after delimiter
@@ -66,10 +68,21 @@ export const completion = (message: RequestMessage): CompletionList | null => {
     prefix = whitespace === "" ? `${delimiter}${word}` : word;
   }
 
-  const items = ITEMS.filter((x) =>
-    x.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase()),
-  )
-    // .slice(0, MAX_ITEMS)
+  const regex = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/;
+  const method = lineUntilCursor.match(regex)?.[1]?.toLowerCase();
+
+  let rawItems: string[] = [];
+  if (method && supportedMethods.includes(method)) {
+    rawItems = getEndpoints()
+      .flatMap((endpoint) => endpoint[method as Method])
+      .map((endpoint) => endpoint.route);
+  } else {
+    rawItems = ITEMS;
+  }
+
+  const items = rawItems
+    .filter((x) => x.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase()))
+    .slice(0, MAX_ITEMS)
     .map((x) => ({ label: x }));
 
   log.writeIndented({
@@ -81,7 +94,7 @@ export const completion = (message: RequestMessage): CompletionList | null => {
   });
 
   return {
-    isIncomplete: false,
+    isIncomplete: rawItems.length > MAX_ITEMS,
     items,
   };
 };
