@@ -16,6 +16,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "dotenv": "^17.2.2"
+    "dotenv": "^17.2.2",
+    "swagger-parser": "^10.0.3"
   }
 }
