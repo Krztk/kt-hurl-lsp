@@ -36,7 +36,7 @@ interface Endpoint {
 
 type GroupedEndpoints = Record<Method, Endpoint[]>;
 
-const groupedEndpoints = new Map<string, GroupedEndpoints>();
+export const groupedEndpoints = new Map<string, GroupedEndpoints>();
 
 export const getEndpointsForUri = (uri: string) => groupedEndpoints.get(uri);
 export const getEndpoints = (): GroupedEndpoints[] => {
