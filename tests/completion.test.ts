@@ -14,12 +14,17 @@ describe("completion tests", () => {
         },
         {
           method: "get",
-          route: "/Article/Published/",
+          route: "/Article/Published",
           params: [],
         },
         {
           method: "get",
-          route: "/Article/Deleted/",
+          route: "/Article/Deleted",
+          params: [],
+        },
+        {
+          method: "get",
+          route: "/Article/{ArticleId}",
           params: [],
         },
       ],
@@ -145,8 +150,9 @@ describe("completion tests", () => {
         const labels = result!.items.map((item) => item.label);
         expect(labels).toEqual([
           "/Article/Draft",
-          "/Article/Published/",
-          "/Article/Deleted/",
+          "/Article/Published",
+          "/Article/Deleted",
+          "/Article/{ArticleId}",
         ]);
       });
       it("filters endpoints by method and partial word", () => {
@@ -170,7 +176,30 @@ describe("completion tests", () => {
 
         expect(result).not.toBeNull();
         const labels = result!.items.map((item) => item.label);
-        expect(labels).toEqual(["/Article/Draft", "/Article/Deleted/"]);
+        expect(labels).toEqual(["/Article/Draft", "/Article/Deleted"]);
+      });
+      it("filters endpoints by method and partial word - including path parameters", () => {
+        const fileUri = "file:///test.hurl";
+
+        const testContent = "GET /Article/{";
+
+        const params: CompletionParams = {
+          position: { character: testContent.length, line: 0 },
+          textDocument: { uri: fileUri },
+        };
+
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual(["/Article/{ArticleId}"]);
       });
     });
   });

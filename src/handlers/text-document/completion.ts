@@ -106,7 +106,7 @@ const getCompletionForAttributes = (
 };
 
 const endpointRegex =
-  /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b\s*([a-zA-Z/\-_]*)/;
+  /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b\s*([a-zA-Z/\-_{}]*)/;
 const getCompletionForEndpoints = (
   curentLine: string,
   lineUntilCursor: string,
