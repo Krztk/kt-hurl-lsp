@@ -22,13 +22,13 @@ export async function processApiDocument(
   processEndpoints(file, api);
 
   log.write(`[process api document](${file}): processing endpoints done`);
-  log.writeIndented(groupedEndpoints.get(file) ?? {});
+  // log.writeIndented(groupedEndpoints.get(file) ?? {});
 
   return api;
 }
 
 export type Method = "get" | "post" | "put" | "delete" | "patch";
-interface Endpoint {
+export interface Endpoint {
   method: Method;
   route: string;
   params: OpenAPIV3.ParameterObject[];

@@ -10,7 +10,19 @@ describe("completion tests", () => {
         {
           method: "get",
           route: "/Article/Draft",
-          params: [],
+          params: [
+            {
+              description: "Optional. Filter by user id.",
+              in: "query",
+              name: "userId",
+              schema: {
+                description: "Optional. Filter by user id.",
+                format: "uuid",
+                nullable: true,
+                type: "string",
+              },
+            },
+          ],
         },
         {
           method: "get",
@@ -126,6 +138,36 @@ describe("completion tests", () => {
           "[Multipart]",
         ]);
       });
+      it("includes all params and unused attributes for current endpoint", async () => {
+        const fileUri = "file:///test.hurl";
+        const params: CompletionParams = {
+          position: { character: 0, line: 2 },
+          textDocument: { uri: fileUri },
+        };
+
+        const testContent = "GET /Article/Draft\n[Query]\n";
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual([
+          "userId:",
+          "[Captures]",
+          "[Form]",
+          "[Asserts]",
+          "[BasicAuth]",
+          "[Cookies]",
+          "[Options]",
+          "[Multipart]",
+        ]);
+      });
     });
 
     describe("when line starts with an HTTP method", () => {
@@ -200,6 +242,34 @@ describe("completion tests", () => {
         expect(result).not.toBeNull();
         const labels = result!.items.map((item) => item.label);
         expect(labels).toEqual(["/Article/{ArticleId}"]);
+      });
+      it("include endpoints for method and envs", () => {
+        const fileUri = "file:///test.hurl";
+
+        const testContent = "GET {{API_URL}}/";
+
+        const params: CompletionParams = {
+          position: { character: testContent.length, line: 0 },
+          textDocument: { uri: fileUri },
+        };
+
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual([
+          "/Article/Draft",
+          "/Article/Published",
+          "/Article/Deleted",
+          "/Article/{ArticleId}",
+        ]);
       });
     });
   });

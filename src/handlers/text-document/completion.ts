@@ -1,6 +1,11 @@
 import { documents } from "../../documents";
 import { log } from "../../log";
-import { getEndpoints, Method, supportedMethods } from "../../open-api-reader";
+import {
+  Endpoint,
+  getEndpoints,
+  Method,
+  supportedMethods,
+} from "../../open-api-reader";
 import { CompletionParams, Range, RequestMessage } from "../../types";
 
 type InsertTextFormat = 1 | 2; //plain // snippet
@@ -53,7 +58,9 @@ export const completion = (message: RequestMessage): CompletionList | null => {
 
   if (content == undefined) return null;
 
-  const currentLine = content.split("\n")[params.position.line]!;
+  const lineNumber = params.position.line;
+  const lines = content.split("\n");
+  const currentLine = lines[lineNumber]!;
   const lineUntilCursor = currentLine.slice(0, params.position.character);
 
   const regex = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/;
@@ -63,7 +70,54 @@ export const completion = (message: RequestMessage): CompletionList | null => {
   if (method && supportedMethods.includes(method)) {
     rawItems = getCompletionForEndpoints(currentLine, lineUntilCursor, method);
   } else {
-    rawItems = getCompletionForAttributes(currentLine, lineUntilCursor);
+    let endpoint: Endpoint | undefined = undefined;
+    let attribute: string | undefined;
+    for (let i = lineNumber - 1; i >= 0; i--) {
+      const m = lines[i]?.match(endpointRegex);
+      const method = m?.[1]?.toLowerCase();
+      const partialEndpointCapture = m?.[3];
+
+      // log.writeIndented({
+      //   lines,
+      //   currentLineIdx: i,
+      //   currentLine: lines[i],
+      //   method,
+      //   partialEndpointCapture,
+      //   attribute,
+      // });
+      // log.write("---");
+      if (partialEndpointCapture && method) {
+        endpoint = getEndpoints()
+          .flatMap((endpoint) => endpoint[method as Method])
+          .find((endpoint) => endpoint.route === partialEndpointCapture);
+
+        // prepare items that can be used based on endpoint
+
+        break;
+      }
+
+      const attributeMatch = lines[i]!.match(/[\[[a-zA-Z]+\]/);
+      if (attributeMatch?.[0]) {
+        attribute = attributeMatch[0];
+      }
+    }
+    log.writeIndented({
+      endpoint,
+      currentLine,
+      attribute,
+    });
+
+    if (endpoint) {
+      const attributes = getCompletionForAttributes(
+        currentLine,
+        lineUntilCursor,
+      ).filter((a) => a !== attribute);
+      rawItems = endpoint.params
+        .map((param) => `${param.name}:`)
+        .concat(attributes);
+    } else {
+      rawItems = getCompletionForAttributes(currentLine, lineUntilCursor);
+    }
   }
 
   const items = rawItems.slice(0, MAX_ITEMS).map((x) => ({ label: x }));
@@ -106,14 +160,14 @@ const getCompletionForAttributes = (
 };
 
 const endpointRegex =
-  /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b\s*([a-zA-Z/\-_{}]*)/;
+  /^(GET|POST|PUT|PATCH|DELETE)\b\s*({{\w+}})*([a-zA-Z/\-_{}]*)/;
 const getCompletionForEndpoints = (
   curentLine: string,
   lineUntilCursor: string,
   method: string,
 ) => {
   const m = lineUntilCursor.match(endpointRegex);
-  const partialEndpointCapture = m?.[2] ?? "";
+  const partialEndpointCapture = m?.[3] ?? "";
 
   const partialEndpoint = partialEndpointCapture.startsWith("/")
     ? partialEndpointCapture
