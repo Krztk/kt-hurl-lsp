@@ -1,5 +1,5 @@
 import { CompletionParams } from "../src/types";
-import { completion } from "../src/handlers/text-document/completion";
+import { completion } from "../src/handlers/text-document/completion/completion";
 import { documents } from "../src/documents";
 import { groupedEndpoints } from "../src/open-api-reader";
 
@@ -27,7 +27,18 @@ describe("completion tests", () => {
         {
           method: "get",
           route: "/Article/Published",
-          params: [],
+          params: [
+            {
+              description: "Optional. Filter by type",
+              in: "query",
+              name: "type",
+              schema: {
+                description: "Optional. Filter by user id.",
+                enum: ["Promoted", "Normal"],
+                type: "string",
+              },
+            },
+          ],
         },
         {
           method: "get",
@@ -270,6 +281,53 @@ describe("completion tests", () => {
           "/Article/Deleted",
           "/Article/{ArticleId}",
         ]);
+      });
+      it("include param values for current attribute and endpoint", () => {
+        const fileUri = "file:///test.hurl";
+
+        const testContent = "GET {{API_URL}}/Article/Published\n[Query]\ntype:";
+
+        const params: CompletionParams = {
+          position: { character: 5, line: 2 },
+          textDocument: { uri: fileUri },
+        };
+
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual(["Promoted", "Normal"]);
+      });
+      it("filters param values for current attribute and endpoint", () => {
+        const fileUri = "file:///test.hurl";
+
+        const testContent =
+          "GET {{API_URL}}/Article/Published\n[Query]\ntype: P";
+
+        const params: CompletionParams = {
+          position: { character: 7, line: 2 },
+          textDocument: { uri: fileUri },
+        };
+
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual(["Promoted"]);
       });
     });
   });

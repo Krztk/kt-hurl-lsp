@@ -1,6 +1,6 @@
 import { initialize } from "./handlers/initialize";
 import { initialized } from "./handlers/initialized";
-import { completion } from "./handlers/text-document/completion";
+import { completion } from "./handlers/text-document/completion/completion";
 import { didChange } from "./handlers/text-document/did-change";
 import { didOpen } from "./handlers/text-document/did-open";
 import { log } from "./log";
