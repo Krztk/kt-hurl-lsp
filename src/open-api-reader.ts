@@ -22,7 +22,6 @@ export async function processApiDocument(
   processEndpoints(file, api);
 
   log.write(`[process api document](${file}): processing endpoints done`);
-  // log.writeIndented(groupedEndpoints.get(file) ?? {});
 
   return api;
 }
@@ -73,19 +72,4 @@ const processEndpoints = (file: string, api: OpenAPIV3.Document) => {
   }
 
   groupedEndpoints.set(file, endpoints);
-};
-
-export const listEndpointsAndParams = (api: OpenAPIV3.Document) => {
-  for (const [route, methods] of Object.entries(api.paths)) {
-    for (const [method, operation] of Object.entries(methods || {})) {
-      if (!["get", "post", "put", "delete", "patch"].includes(method)) continue;
-
-      log.write(`${method.toUpperCase()} ${route}`);
-      const params = (operation as OpenAPIV3.OperationObject).parameters || [];
-      for (const param of params as OpenAPIV3.ParameterObject[]) {
-        log.write("[param]");
-        log.writeIndented(param);
-      }
-    }
-  }
 };

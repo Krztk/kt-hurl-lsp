@@ -4,10 +4,7 @@ import { documents, workspace } from "../../documents";
 import { log } from "../../log";
 import { NotificationMessage } from "../../server";
 import { DocumentUri } from "../../types";
-import {
-  listEndpointsAndParams,
-  processApiDocument,
-} from "../../open-api-reader";
+import { processApiDocument } from "../../open-api-reader";
 
 type TextDocumentItem = {
   uri: DocumentUri;
@@ -22,8 +19,6 @@ interface DidOpenTextDocumentParams {
 
 export const didOpen = async (message: NotificationMessage) => {
   const params = message.params as DidOpenTextDocumentParams;
-  // log.write(["didOpen handler"]);
-  // log.writeIndented(params);
   const fsPath = uriToPath(params.textDocument.uri);
 
   if (workspace.root === null) {
@@ -32,13 +27,9 @@ export const didOpen = async (message: NotificationMessage) => {
   }
 
   const pathToOpenApi = `${workspace.root}/openapi.json`;
-  log.write(`Does file '${pathToOpenApi}' exist`);
   if (fs.existsSync(pathToOpenApi)) {
-    log.write("file exists");
     const api = await processApiDocument(pathToOpenApi);
-    listEndpointsAndParams(api);
   }
-  log.write("out of reading open api");
 
   documents.set(params.textDocument.uri, params.textDocument.text);
 };

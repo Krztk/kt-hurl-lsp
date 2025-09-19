@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { initialize } from "./handlers/initialize";
 import { initialized } from "./handlers/initialized";
 import { completion } from "./handlers/text-document/completion/completion";
