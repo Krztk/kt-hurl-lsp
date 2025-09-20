@@ -1,12 +1,5 @@
-import { OpenAPIV3 } from "openapi-types";
 import { documents } from "../../../documents";
-import { log } from "../../../log";
-import {
-  Endpoint,
-  getEndpoints,
-  Method,
-  supportedMethods,
-} from "../../../open-api-reader";
+import { supportedMethods } from "../../../open-api-reader";
 import { CompletionParams, Range, RequestMessage } from "../../../types";
 import {
   getCompletionsForAttributes,

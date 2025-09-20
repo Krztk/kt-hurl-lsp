@@ -51,7 +51,7 @@ export const getCompletionsForEndpoint = (
 };
 
 const endpointRegex =
-  /^(GET|POST|PUT|PATCH|DELETE)\b\s*({{\w+}})*([a-zA-Z/\-_{}]*)/;
+  /^(GET|POST|PUT|PATCH|DELETE)\b\s*({{\w+}})*([a-zA-Z0-9/\-_{}]*)/;
 
 export const getEndpointContextForCurrentLine = (
   lines: string[],

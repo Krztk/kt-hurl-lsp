@@ -52,7 +52,18 @@ describe("completion tests", () => {
         },
       ],
       post: [],
-      delete: [],
+      delete: [
+        {
+          method: "delete",
+          route: "/v1/Article/{ArticleId}",
+          params: [],
+        },
+        {
+          method: "delete",
+          route: "/v2/Article/{ArticleId}",
+          params: [],
+        },
+      ],
       patch: [],
       put: [],
     });
@@ -230,6 +241,29 @@ describe("completion tests", () => {
         expect(result).not.toBeNull();
         const labels = result!.items.map((item) => item.label);
         expect(labels).toEqual(["/Article/Draft", "/Article/Deleted"]);
+      });
+      it("filters endpoints by method and partial word 2", () => {
+        const fileUri = "file:///test.hurl";
+
+        const testContent = "DELETE /v2";
+
+        const params: CompletionParams = {
+          position: { character: testContent.length, line: 0 },
+          textDocument: { uri: fileUri },
+        };
+
+        documents.set(fileUri, testContent);
+
+        const result = completion({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "textDocument/completion",
+          params,
+        });
+
+        expect(result).not.toBeNull();
+        const labels = result!.items.map((item) => item.label);
+        expect(labels).toEqual(["/v2/Article/{ArticleId}"]);
       });
       it("filters endpoints by method and partial word - including path parameters", () => {
         const fileUri = "file:///test.hurl";
