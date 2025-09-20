@@ -18,17 +18,27 @@ export const getCompletionsForEndpoints = (
     .map((endpoint) => endpoint.route);
 };
 
-export const getCompletionsForEndpoint = (
-  endpoint: Endpoint,
-  lineUntilCursor: string,
-  usedAttributes: string[],
-) => {
-  const m = lineUntilCursor.match(/^\s*([a-zA-Z0-9_]+):\s*([a-zA-Z0-9_]*)$/);
-  const paramMatch = m?.[1];
-  const partialValue = m?.[2];
+type EndpointContext = {
+  endpoint?: Endpoint;
+  usedAttributes: string[];
+  usedParams: string[];
+};
 
-  if (paramMatch) {
-    const param = endpoint.params.find((p) => p.name === paramMatch);
+export const getCompletionsForEndpoint = ({
+  endpointContext: { endpoint, usedAttributes, usedParams },
+  lineUntilCursor,
+}: {
+  endpointContext: EndpointContext;
+  lineUntilCursor: string;
+}): string[] => {
+  const m = lineUntilCursor.match(/^\s*([a-zA-Z0-9_]+)(:\s*([a-zA-Z0-9_]*))?$/);
+  const paramName = m?.[1];
+  const isVariableNameFinal = Boolean(m?.[2]);
+  const partialValue = m?.[3];
+
+  if (endpoint && isVariableNameFinal && paramName) {
+    const param = endpoint.params.find((p) => p.name === paramName);
+
     if (param && param.schema) {
       const schema = param.schema as OpenAPIV3.SchemaObject;
 
@@ -41,11 +51,19 @@ export const getCompletionsForEndpoint = (
     }
   }
 
+  const partialName = paramName ?? "";
+  const params = endpoint
+    ? endpoint.params.filter(
+        (p) => p.name.startsWith(partialName) && !usedParams.includes(p.name),
+      )
+    : [];
+
   const completionAttributes = getCompletionsForAttributes(
     lineUntilCursor,
   ).filter((a) => !usedAttributes.includes(a));
 
-  return endpoint.params
+  return params
+    .filter((param) => !usedParams.includes(param.name))
     .map((param) => `${param.name}:`)
     .concat(completionAttributes);
 };
@@ -56,14 +74,31 @@ const endpointRegex =
 export const getEndpointContextForCurrentLine = (
   lines: string[],
   lineNumber: number,
-) => {
+): EndpointContext => {
   let endpoint: Endpoint | undefined = undefined;
   let usedAttributes: string[] = [];
-  for (let i = lineNumber - 1; i >= 0; i--) {
-    const m = lines[i]?.match(endpointRegex);
-    const method = m?.[1]?.toLowerCase();
-    const partialEndpointCapture = m?.[3];
+  let usedParams: string[] = [];
 
+  const appendUsedAttributesAndParams = (line: string) => {
+    const attributeRegex = /[\[[a-zA-Z]+\]/;
+    const paramRegex = /^\s*([a-zA-Z0-9_]+):\s*([a-zA-Z0-9_\-:\.]*)$/;
+    const attributeMatch = line.match(attributeRegex);
+    if (attributeMatch?.[0]) {
+      usedAttributes.push(attributeMatch[0]);
+    }
+
+    const paramMatch = line.match(paramRegex);
+    const paramName = paramMatch?.[1];
+    if (paramName) {
+      usedParams.push(paramName);
+    }
+  };
+
+  for (let i = lineNumber - 1; i >= 0; i--) {
+    const line = lines[i] as string;
+    const endpointMatch = line.match(endpointRegex);
+    const method = endpointMatch?.[1]?.toLowerCase();
+    const partialEndpointCapture = endpointMatch?.[3];
     if (partialEndpointCapture && method) {
       endpoint = getEndpoints()
         .flatMap((endpoint) => endpoint[method as Method])
@@ -72,15 +107,21 @@ export const getEndpointContextForCurrentLine = (
       break;
     }
 
-    const attributeMatch = lines[i]!.match(/[\[[a-zA-Z]+\]/);
-    if (attributeMatch?.[0]) {
-      usedAttributes.push(attributeMatch[0]);
-    }
+    appendUsedAttributesAndParams(line);
+  }
+
+  for (let i = lineNumber + 1; i < lines.length; i++) {
+    const line = lines[i] as string;
+    const isEmpty = line.trim() === "";
+
+    if (isEmpty || endpointRegex.test(line)) break;
+    appendUsedAttributesAndParams(line);
   }
 
   return {
     endpoint,
     usedAttributes,
+    usedParams,
   };
 };
 

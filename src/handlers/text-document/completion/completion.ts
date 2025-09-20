@@ -70,17 +70,13 @@ export const completion = (message: RequestMessage): CompletionList | null => {
   if (method && supportedMethods.includes(method)) {
     rawItems = getCompletionsForEndpoints(lineUntilCursor, method);
   } else {
-    const { usedAttributes, endpoint } = getEndpointContextForCurrentLine(
-      lines,
-      lineNumber,
-    );
+    const endpointContext = getEndpointContextForCurrentLine(lines, lineNumber);
 
-    if (endpoint) {
-      rawItems = getCompletionsForEndpoint(
-        endpoint,
+    if (endpointContext) {
+      rawItems = getCompletionsForEndpoint({
         lineUntilCursor,
-        usedAttributes,
-      );
+        endpointContext,
+      });
     } else {
       rawItems = getCompletionsForAttributes(lineUntilCursor);
     }
