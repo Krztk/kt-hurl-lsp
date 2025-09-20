@@ -59,7 +59,7 @@ export const completion = (message: RequestMessage): CompletionList | null => {
   if (content == undefined) return null;
 
   const lineNumber = params.position.line;
-  const lines = content.split("\n");
+  const lines = content.split(/\r?\n/);
   const currentLine = lines[lineNumber]!;
   const lineUntilCursor = currentLine.slice(0, params.position.character);
 
@@ -71,15 +71,10 @@ export const completion = (message: RequestMessage): CompletionList | null => {
     rawItems = getCompletionsForEndpoints(lineUntilCursor, method);
   } else {
     const endpointContext = getEndpointContextForCurrentLine(lines, lineNumber);
-
-    if (endpointContext) {
-      rawItems = getCompletionsForEndpoint({
-        lineUntilCursor,
-        endpointContext,
-      });
-    } else {
-      rawItems = getCompletionsForAttributes(lineUntilCursor);
-    }
+    rawItems = getCompletionsForEndpoint({
+      lineUntilCursor,
+      endpointContext,
+    });
   }
 
   const items = rawItems.slice(0, MAX_ITEMS).map((x) => ({ label: x }));

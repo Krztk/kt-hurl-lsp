@@ -61,6 +61,15 @@ describe("attributes and params tests", () => {
                 type: "string",
               },
             },
+            {
+              description: "Optional. Filter by article-type",
+              in: "query",
+              name: "article-type",
+              schema: {
+                description: "Optional. Filter by article type.",
+                type: "string",
+              },
+            },
           ],
         },
         {
@@ -88,6 +97,39 @@ describe("attributes and params tests", () => {
   afterEach(() => {
     documents.clear();
   });
+  describe("various attribute styles", () => {
+    it("used params test", () => {
+      const fileUri = "file:///test.hurl";
+      const params: CompletionParams = {
+        position: { character: 0, line: 2 },
+        textDocument: { uri: fileUri },
+      };
+
+      const testContent = `GET {{API}}/not-in-the-open-api/test
+[Query]
+
+from: 2025-09-20T15:25:00.000Z
+test-2: 0
+test-v2: 123
+test1: test
+test_2: 123
+`;
+
+      const result = getEndpointContextForCurrentLine(
+        testContent.split("\n"),
+        params.position.line,
+      );
+
+      expect(result.usedParams).toEqual([
+        "from",
+        "test-2",
+        "test-v2",
+        "test1",
+        "test_2",
+      ]);
+    });
+  });
+
   describe("given endpoint that does not exist in openapi.json", () => {
     it("should return only unused attributes", () => {
       const fileUri = "file:///test.hurl";

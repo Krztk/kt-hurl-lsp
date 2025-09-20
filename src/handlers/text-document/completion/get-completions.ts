@@ -81,7 +81,7 @@ export const getEndpointContextForCurrentLine = (
 
   const appendUsedAttributesAndParams = (line: string) => {
     const attributeRegex = /[\[[a-zA-Z]+\]/;
-    const paramRegex = /^\s*([a-zA-Z0-9_]+):\s*([a-zA-Z0-9_\-:\.]*)$/;
+    const paramRegex = /^\s*([a-zA-Z0-9_\-]+):\s*([a-zA-Z0-9_\-:\.]*)$/;
     const attributeMatch = line.match(attributeRegex);
     if (attributeMatch?.[0]) {
       usedAttributes.push(attributeMatch[0]);
